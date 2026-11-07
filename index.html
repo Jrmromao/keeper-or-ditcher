@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#f4ecd8" />
+<title>Keeper or Ditcher</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,900;1,9..144,500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --paper: #f4ecd8;
+    --paper-dark: #e8ddc4;
+    --ink: #1a1410;
+    --tomato: #e4572e;
+    --tomato-dark: #c1431f;
+    --olive: #5c6b3f;
+    --gold: #d9a521;
+    --safe-b: env(safe-area-inset-bottom, 0px);
+    --safe-t: env(safe-area-inset-top, 0px);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; }
+  body {
+    font-family: "Fraunces", Georgia, serif;
+    background-color: var(--paper);
+    background-image:
+      radial-gradient(circle at 15% 15%, rgba(228,87,46,0.06), transparent 45%),
+      radial-gradient(circle at 85% 85%, rgba(92,107,63,0.06), transparent 45%),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    color: var(--ink);
+    min-height: 100%;
+  }
+
+  /* --- Mobile-first full-bleed shell --- */
+  .screen {
+    min-height: 100dvh;
+    width: 100%;
+    max-width: 520px;
+    margin: 0 auto;
+    display: none;
+    flex-direction: column;
+    padding: calc(22px + var(--safe-t)) 22px calc(22px + var(--safe-b));
+  }
+  .screen.active { display: flex; }
+  .screen-top { flex: 1 1 auto; }
+  .screen-actions { flex: 0 0 auto; padding-top: 18px; }
+
+  .masthead {
+    display: flex; justify-content: space-between; align-items: center;
+    font-family: "DM Mono", monospace; font-size: 0.6rem;
+    letter-spacing: 0.22em; text-transform: uppercase; color: var(--olive);
+    border-bottom: 2.5px solid var(--ink); padding-bottom: 8px; margin-bottom: 26px;
+  }
+  .masthead .dot { color: var(--tomato); }
+
+  .kicker {
+    font-family: "DM Mono", monospace; font-size: 0.68rem;
+    letter-spacing: 0.3em; text-transform: uppercase; color: var(--tomato); margin-bottom: 8px;
+  }
+  h1 { font-weight: 900; font-size: clamp(2.6rem, 11vw, 3.4rem); line-height: 0.92; letter-spacing: -0.02em; }
+  h1 em { font-style: italic; color: var(--tomato); }
+  .lede { font-size: 1.05rem; line-height: 1.5; color: #4a3f33; margin-top: 16px; max-width: 34ch; }
+
+  .rule { height: 2.5px; background: var(--ink); margin: 24px 0; }
+  .rule.dotted { height: 0; border-top: 2.5px dashed var(--ink); background: none; }
+
+  label {
+    display: block; font-family: "DM Mono", monospace; font-size: 0.7rem;
+    letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 7px;
+  }
+  .field { margin-bottom: 18px; }
+  input[type="text"] {
+    width: 100%; padding: 15px 15px; border: 2.5px solid var(--ink);
+    background: var(--paper); color: var(--ink);
+    font-family: "Fraunces", serif; font-size: 1.15rem; font-weight: 600;
+  }
+  input::placeholder { color: #a89a80; font-style: italic; font-weight: 400; }
+  input:focus { outline: none; background: #fff; box-shadow: 4px 4px 0 var(--tomato); }
+
+  /* --- Buttons: thumb zone, big targets --- */
+  .btn {
+    display: block; width: 100%; min-height: 56px; padding: 16px;
+    border: 2.5px solid var(--ink); background: var(--tomato); color: var(--paper);
+    font-family: "Fraunces", serif; font-weight: 900; font-size: 1.2rem;
+    cursor: pointer; box-shadow: 5px 5px 0 var(--ink);
+    transition: transform 0.08s ease, box-shadow 0.08s ease;
+  }
+  .btn:hover { transform: translate(-2px,-2px); box-shadow: 7px 7px 0 var(--ink); }
+  .btn:active { transform: translate(3px,3px); box-shadow: 2px 2px 0 var(--ink); }
+  .btn:focus-visible { outline: 3px solid var(--olive); outline-offset: 3px; }
+  .btn.ghost { background: var(--paper); color: var(--ink); box-shadow: 5px 5px 0 var(--olive); margin-top: 12px; }
+  .btn.ghost:hover { box-shadow: 7px 7px 0 var(--olive); }
+  .btn[disabled] { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: 5px 5px 0 var(--ink); }
+
+  /* --- Quiz --- */
+  .turnbar {
+    display: flex; justify-content: space-between; align-items: baseline;
+    font-family: "DM Mono", monospace; font-size: 0.72rem;
+    letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 12px;
+  }
+  .turnbar .who { color: var(--tomato); font-weight: 500; }
+  .ticks { display: flex; gap: 5px; margin-bottom: 30px; }
+  .tick { flex: 1; height: 10px; border: 2px solid var(--ink); background: var(--paper); transition: background 0.2s; }
+  .tick.on { background: var(--ink); }
+
+  .qnum { font-style: italic; font-weight: 500; font-size: 1rem; color: var(--olive); margin-bottom: 6px; }
+  .question { font-weight: 900; font-size: clamp(1.7rem, 7vw, 2.1rem); line-height: 1.06; letter-spacing: -0.01em; margin-bottom: 26px; }
+
+  .options { display: flex; flex-direction: column; gap: 13px; }
+  .option {
+    display: flex; align-items: center; gap: 14px; width: 100%;
+    min-height: 60px; padding: 14px 16px; text-align: left;
+    border: 2.5px solid var(--ink); background: var(--paper); color: var(--ink);
+    cursor: pointer; font-family: "Fraunces", serif; font-size: 1.15rem; font-weight: 600;
+    transition: transform 0.08s ease, box-shadow 0.08s ease, background 0.08s;
+  }
+  .option .letter {
+    font-family: "DM Mono", monospace; font-size: 0.8rem; font-weight: 500;
+    width: 30px; height: 30px; flex: none; display: flex; align-items: center; justify-content: center;
+    border: 2px solid var(--ink); background: var(--paper);
+  }
+  .option:hover { background: var(--gold); transform: translate(-2px,-2px); box-shadow: 4px 4px 0 var(--ink); }
+  .option:hover .letter { background: var(--paper); }
+  .option:focus-visible { outline: 3px solid var(--olive); outline-offset: 3px; }
+  .option.chosen { background: var(--ink); color: var(--paper); }
+  .option.chosen .letter { background: var(--paper); color: var(--ink); }
+
+  /* --- Handoff --- */
+  .center { text-align: center; }
+  .big-emoji { font-size: 3.6rem; line-height: 1; margin-bottom: 10px; }
+
+  /* --- Result reveal --- */
+  .reveal-text {
+    text-align: center; font-style: italic; color: var(--olive);
+    font-size: 1.3rem; letter-spacing: 0.02em;
+  }
+  .stamp {
+    border: 2.5px solid var(--ink); width: 180px; height: 180px; margin: 4px auto 18px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    background: repeating-linear-gradient(45deg, transparent, transparent 7px, rgba(26,20,16,0.05) 7px, rgba(26,20,16,0.05) 8px);
+    opacity: 0; transform: scale(0.8) rotate(-6deg); transition: opacity .35s ease, transform .35s cubic-bezier(.2,1.3,.4,1);
+  }
+  .stamp.in { opacity: 1; transform: scale(1) rotate(-3deg); }
+  .stamp .pct { font-weight: 900; font-size: 3.6rem; line-height: 1; letter-spacing: -0.03em; }
+  .stamp .cap { font-family: "DM Mono", monospace; font-size: 0.6rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--olive); margin-top: 2px; }
+
+  .verdict { text-align: center; font-weight: 900; font-size: clamp(1.9rem, 8vw, 2.3rem); line-height: 1; margin-bottom: 10px; letter-spacing: -0.02em; }
+  .verdict-desc { text-align: center; font-style: italic; color: #4a3f33; line-height: 1.5; margin-bottom: 20px; font-size: 1.05rem; }
+
+  .bd-head {
+    display: flex; justify-content: space-between; font-family: "DM Mono", monospace; font-size: 0.7rem;
+    letter-spacing: 0.14em; text-transform: uppercase; padding-bottom: 8px; margin-bottom: 2px;
+    border-bottom: 2.5px solid var(--ink);
+  }
+  .row {
+    display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
+    padding: 11px 0; border-bottom: 1.5px dotted #b3a588; font-size: 1.02rem;
+  }
+  .row .lbl { font-weight: 600; }
+  .row .val { font-family: "DM Mono", monospace; font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; white-space: nowrap; display: flex; align-items: center; gap: 6px; }
+  .val .glyph { font-size: 0.9rem; }
+  .val.yes { color: var(--olive); }
+  .val.no { color: var(--tomato); }
+
+  .sr-only {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+  }
+
+  /* --- Email capture (optional, post-result) --- */
+  .capture {
+    border: 2.5px solid var(--ink); background: var(--paper-dark);
+    padding: 18px 16px; margin-top: 22px;
+  }
+  .capture .cap-kicker {
+    font-family: "DM Mono", monospace; font-size: 0.62rem; letter-spacing: 0.2em;
+    text-transform: uppercase; color: var(--tomato); margin-bottom: 6px;
+  }
+  .capture h3 { font-weight: 900; font-size: 1.3rem; line-height: 1.05; margin-bottom: 4px; }
+  .capture p.note { font-size: 0.92rem; font-style: italic; color: #4a3f33; line-height: 1.45; margin-bottom: 14px; }
+  .capture input[type="email"] {
+    width: 100%; padding: 14px; border: 2.5px solid var(--ink); background: var(--paper);
+    color: var(--ink); font-family: "Fraunces", serif; font-size: 1.1rem; font-weight: 600; margin-bottom: 12px;
+  }
+  .capture input[type="email"]::placeholder { color: #a89a80; font-style: italic; font-weight: 400; }
+  .capture input[type="email"]:focus { outline: none; background: #fff; box-shadow: 4px 4px 0 var(--tomato); }
+  .consent { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 14px; cursor: pointer; }
+  .consent input { width: 22px; height: 22px; flex: none; accent-color: var(--tomato); margin-top: 2px; }
+  .consent span { font-size: 0.85rem; line-height: 1.4; color: #4a3f33; }
+  .consent a { color: var(--ink); }
+  .capture .btn.small { min-height: 50px; font-size: 1.05rem; box-shadow: 4px 4px 0 var(--ink); }
+  .capture-msg { font-family: "DM Mono", monospace; font-size: 0.78rem; letter-spacing: 0.04em; margin-top: 4px; min-height: 1.1em; }
+  .capture-msg.ok { color: var(--olive); }
+  .capture-msg.err { color: var(--tomato); }
+  .capture.done { text-align: center; }
+  .capture.done .big-emoji { font-size: 2.4rem; margin-bottom: 6px; }
+
+  /* tiny privacy drawer */
+  details.privacy { margin-top: 14px; font-size: 0.8rem; }
+  details.privacy summary {
+    font-family: "DM Mono", monospace; font-size: 0.66rem; letter-spacing: 0.14em;
+    text-transform: uppercase; color: var(--olive); cursor: pointer;
+  }
+  details.privacy p { margin-top: 8px; line-height: 1.5; color: #4a3f33; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .stamp { transition: none; opacity: 1; transform: scale(1) rotate(-3deg); }
+  }
+</style>
+</head>
+<body>
+
+<!-- START -->
+<main id="start" class="screen active" aria-labelledby="startTitle">
+  <div class="screen-top">
+    <div class="masthead"><span>Issue No. 01</span><span class="dot">● The Compatibility Test</span></div>
+    <div class="kicker">Two people. One device.</div>
+    <h1 id="startTitle">Keeper<br>or <em>Ditcher?</em></h1>
+    <p class="lede">You both answer the same questions, take turns, and we deliver the verdict. Nothing is saved or sent anywhere.</p>
+    <div class="rule"></div>
+    <form id="startForm" onsubmit="return startQuiz(event)">
+      <div class="field">
+        <label for="p1">Partner one</label>
+        <input type="text" id="p1" placeholder="their name" autocomplete="off" maxlength="18" oninput="validateStart()" />
+      </div>
+      <div class="field">
+        <label for="p2">Partner two</label>
+        <input type="text" id="p2" placeholder="their name" autocomplete="off" maxlength="18" oninput="validateStart()" />
+      </div>
+    </form>
+  </div>
+  <div class="screen-actions">
+    <button class="btn" id="startBtn" type="submit" form="startForm">Begin the test →</button>
+  </div>
+</main>
+
+<!-- QUIZ -->
+<main id="quiz" class="screen" aria-labelledby="questionText" aria-live="polite">
+  <div class="screen-top">
+    <div class="turnbar">
+      <span class="who" id="whoLabel"></span>
+      <span id="countLabel"></span>
+    </div>
+    <div class="ticks" id="ticks" aria-hidden="true"></div>
+    <p class="qnum" id="qnum"></p>
+    <h2 class="question" id="questionText"></h2>
+    <div class="options" id="options" role="group" aria-label="Choose one answer"></div>
+  </div>
+</main>
+
+<!-- HANDOFF -->
+<main id="handoff" class="screen center" aria-labelledby="handoffTitle">
+  <div class="screen-top" style="display:flex;flex-direction:column;justify-content:center;">
+    <div class="big-emoji" aria-hidden="true">🤝</div>
+    <div class="kicker">Intermission</div>
+    <h1 id="handoffTitle">Pass it<br><em>over.</em></h1>
+    <p class="lede" style="margin:16px auto 0;" id="handoffText"></p>
+  </div>
+  <div class="screen-actions">
+    <button class="btn" onclick="beginSecond()">I'm ready — my turn →</button>
+  </div>
+</main>
+
+<!-- REVEAL -->
+<main id="reveal" class="screen center" aria-hidden="true">
+  <div class="screen-top" style="display:flex;flex-direction:column;justify-content:center;">
+    <div class="kicker">Tallying the answers</div>
+    <p class="reveal-text" id="revealText">Comparing your answers…</p>
+  </div>
+</main>
+
+<!-- RESULT -->
+<main id="result" class="screen" aria-labelledby="verdict">
+  <div class="screen-top">
+    <div class="kicker center">The Verdict Is In</div>
+    <div class="stamp" id="stamp">
+      <span class="pct" id="pct">0%</span>
+      <span class="cap">in sync</span>
+    </div>
+    <h1 class="verdict" id="verdict"></h1>
+    <p class="verdict-desc" id="verdictDesc"></p>
+    <div class="rule"></div>
+    <div class="bd-head"><span>The Question</span><span id="scoreTally"></span></div>
+    <div id="breakdown"></div>
+
+    <!-- OPTIONAL email capture — never gates the result -->
+    <div class="capture" id="capture">
+      <div class="cap-kicker">● Optional</div>
+      <h3>Join the list for new question packs</h3>
+      <p class="note">Get fresh couple quizzes and your result by email. Double opt-in — we'll ask you to confirm first. No spam, unsubscribe anytime.</p>
+      <form id="emailForm" onsubmit="return submitEmail(event)">
+        <label for="email" class="sr-only">Email address</label>
+        <input type="email" id="email" name="email" placeholder="you@example.com" autocomplete="email" required />
+        <label class="consent">
+          <input type="checkbox" id="consent" required />
+          <span>Yes, email me our result and occasional new question packs. I can unsubscribe anytime.</span>
+        </label>
+        <button class="btn small" type="submit" id="emailBtn">Send me our result →</button>
+        <p class="capture-msg" id="captureMsg" role="status" aria-live="polite"></p>
+      </form>
+      <details class="privacy">
+        <summary>How we use your email</summary>
+        <p>Your email is sent only to deliver your result and occasional question packs. It is not sold or shared. There's an unsubscribe link in every email. Submitting is entirely optional — your verdict above is already complete.</p>
+      </details>
+    </div>
+  </div>
+  <div class="screen-actions">
+    <button class="btn" id="shareBtn" onclick="shareResult()">Share the verdict ↗</button>
+    <button class="btn ghost" onclick="location.reload()">Run it again ↺</button>
+  </div>
+</main>
+
+<canvas id="shareCanvas" width="1080" height="1080" style="display:none"></canvas>
+
+<script>
+  const QUESTIONS = [
+    { q: "Ideal Friday night?", opts: ["Cozy night in", "Out with friends", "Spontaneous adventure", "Dinner, just us two"] },
+    { q: "How do you handle a fight?", opts: ["Talk it out now", "Need space first", "Joke to defuse it", "Avoid it entirely"] },
+    { q: "Dream trip together?", opts: ["Beach & sun", "City & culture", "Mountains & nature", "Staycation, honestly"] },
+    { q: "Time together vs. apart?", opts: ["Glued at the hip", "Lots, but need me-time", "Quality over quantity", "Independence first"] },
+    { q: "Money style?", opts: ["Saver, plans ahead", "Treat-yourself spender", "Balanced middle", "Don't think about it"] },
+    { q: "Where's this in 5 years?", opts: ["Married / settled", "Together, no labels", "Taking it slow", "Depends how it goes"] },
+    { q: "Love language you crave?", opts: ["Quality time", "Physical touch", "Words of affirmation", "Acts of service"] },
+    { q: "Pets?", opts: ["Dog person", "Cat person", "Both, all animals", "No pets, thanks"] },
+  ];
+  const LETTERS = ["A", "B", "C", "D"];
+
+  // ── Email capture config (Buttondown) ─────────────────────────────
+  // 1. Create a free account at https://buttondown.com
+  // 2. Put your Buttondown username below (it's the name in your public
+  //    newsletter URL buttondown.com/USERNAME — safe to expose publicly).
+  // This uses Buttondown's front-end embed endpoint: it never exposes an
+  // API key, and new subscribers get a double opt-in confirmation email.
+  // Until you set this, the form runs in DEMO mode (nothing is sent).
+  const BUTTONDOWN_USERNAME = "keeprs";
+  // ───────────────────────────────────────────────────────────────────
+
+  let names = { p1: "Partner One", p2: "Partner Two" };
+  let answers = { p1: [], p2: [] };
+  let current = 0, whoseTurn = "p1";
+  let result = { pct: 0, verdict: "", matches: 0 };
+
+  function validateStart() {
+    const ok = document.getElementById("p1").value.trim() && document.getElementById("p2").value.trim();
+    document.getElementById("startBtn").disabled = !ok;
+  }
+  validateStart();
+
+  function startQuiz(e) {
+    if (e) e.preventDefault();
+    names.p1 = document.getElementById("p1").value.trim() || "Partner One";
+    names.p2 = document.getElementById("p2").value.trim() || "Partner Two";
+    whoseTurn = "p1"; current = 0;
+    show("quiz"); renderQuestion();
+    return false;
+  }
+
+  function renderQuestion() {
+    document.getElementById("whoLabel").textContent = "▸ " + names[whoseTurn] + " answering";
+    document.getElementById("countLabel").textContent = "Q" + (current + 1) + " / " + QUESTIONS.length;
+
+    const ticks = document.getElementById("ticks");
+    ticks.innerHTML = "";
+    for (let i = 0; i < QUESTIONS.length; i++) {
+      const t = document.createElement("div");
+      t.className = "tick" + (i <= current ? " on" : "");
+      ticks.appendChild(t);
+    }
+    document.getElementById("qnum").textContent = "Question " + (current + 1);
+    document.getElementById("questionText").textContent = QUESTIONS[current].q;
+
+    const box = document.getElementById("options");
+    box.innerHTML = "";
+    QUESTIONS[current].opts.forEach((opt, i) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "option";
+      btn.innerHTML = '<span class="letter" aria-hidden="true">' + LETTERS[i] + '</span><span>' + opt + '</span>';
+      btn.setAttribute("aria-label", "Option " + LETTERS[i] + ": " + opt);
+      btn.onclick = () => choose(i, btn);
+      box.appendChild(btn);
+    });
+    const first = box.querySelector(".option");
+    if (first) first.focus();
+  }
+
+  function choose(i, btn) {
+    answers[whoseTurn][current] = i;
+    if (btn) btn.classList.add("chosen");
+    setTimeout(() => {
+      current++;
+      if (current < QUESTIONS.length) {
+        renderQuestion();
+      } else if (whoseTurn === "p1") {
+        document.getElementById("handoffText").textContent =
+          names.p1 + " is done. Hand the device to " + names.p2 + " — and no peeking at the answers.";
+        show("handoff");
+      } else {
+        runReveal();
+      }
+    }, 130);
+  }
+
+  function beginSecond() { whoseTurn = "p2"; current = 0; show("quiz"); renderQuestion(); }
+
+  function computeResult() {
+    let matches = 0;
+    const rows = [];
+    QUESTIONS.forEach((item, idx) => {
+      const same = answers.p1[idx] === answers.p2[idx];
+      if (same) matches++;
+      rows.push(
+        '<div class="row"><span class="lbl">' + item.q + '</span>' +
+        '<span class="val ' + (same ? "yes" : "no") + '">' +
+        '<span class="glyph" aria-hidden="true">' + (same ? "✓" : "✗") + '</span>' +
+        (same ? "aligned" : "diverge") + '</span></div>'
+      );
+    });
+    const pct = Math.round((matches / QUESTIONS.length) * 100);
+    let verdict, desc;
+    if (pct >= 80)      { verdict = "Certified Keepers"; desc = names.p1 + " & " + names.p2 + " are remarkably in step. Frame this one."; }
+    else if (pct >= 60) { verdict = "Strong Match";       desc = "Plenty of common ground, with just enough friction to stay interesting."; }
+    else if (pct >= 40) { verdict = "Worth a Talk";       desc = "Real differences here — nothing a long dinner can't untangle."; }
+    else if (pct >= 20) { verdict = "Opposites, Attract?"; desc = "You see the world quite differently. Could be magnetic, could be work."; }
+    else                { verdict = "Plot Twist";          desc = "Almost no overlap. Either you complete each other — or run."; }
+    return { matches, pct, verdict, desc, rows };
+  }
+
+  function runReveal() {
+    const r = computeResult();
+    result = r;
+    show("reveal");
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const lines = ["Comparing your answers…", "Measuring the overlap…", "Consulting the archive…"];
+    const el = document.getElementById("revealText");
+    let step = 0;
+    const delay = reduce ? 0 : 1500;
+    if (!reduce) {
+      const iv = setInterval(() => { step++; if (step < lines.length) el.textContent = lines[step]; }, 500);
+      setTimeout(() => clearInterval(iv), delay);
+    }
+    setTimeout(() => paintResult(r, reduce), delay);
+  }
+
+  function paintResult(r, reduce) {
+    const accent = r.pct >= 60 ? "var(--olive)" : r.pct >= 35 ? "var(--gold)" : "var(--tomato)";
+    document.getElementById("pct").style.color = accent;
+    document.getElementById("verdict").style.color = accent;
+    document.getElementById("verdict").textContent = r.verdict;
+    document.getElementById("verdictDesc").textContent = r.desc;
+    document.getElementById("scoreTally").textContent = r.matches + " / " + QUESTIONS.length + " aligned";
+    document.getElementById("breakdown").innerHTML = r.rows.join("");
+    show("result");
+
+    const stamp = document.getElementById("stamp");
+    const pctEl = document.getElementById("pct");
+    requestAnimationFrame(() => stamp.classList.add("in"));
+    if (reduce) { pctEl.textContent = r.pct + "%"; return; }
+    let n = 0;
+    const steps = 28, inc = r.pct / steps;
+    const iv = setInterval(() => {
+      n += inc;
+      if (n >= r.pct) { n = r.pct; clearInterval(iv); }
+      pctEl.textContent = Math.round(n) + "%";
+    }, 22);
+  }
+
+  /* ---- Shareable image via canvas ---- */
+  function buildShareCard() {
+    const c = document.getElementById("shareCanvas");
+    const x = c.getContext("2d");
+    const W = 1080, H = 1080;
+    const paper = "#f4ecd8", ink = "#1a1410", tomato = "#e4572e", olive = "#5c6b3f", gold = "#d9a521";
+    const accent = result.pct >= 60 ? olive : result.pct >= 35 ? gold : tomato;
+
+    x.fillStyle = paper; x.fillRect(0, 0, W, H);
+    x.strokeStyle = ink; x.lineWidth = 10; x.strokeRect(40, 40, W - 80, H - 80);
+
+    x.fillStyle = tomato; x.font = "500 26px 'DM Mono', monospace";
+    x.textAlign = "center";
+    x.fillText("● THE COMPATIBILITY TEST", W / 2, 150);
+
+    x.fillStyle = ink; x.textAlign = "center";
+    x.font = "900 110px 'Fraunces', serif";
+    x.fillText("Keeper or", W / 2, 290);
+    x.fillStyle = tomato; x.font = "italic 900 110px 'Fraunces', serif";
+    x.fillText("Ditcher?", W / 2, 400);
+
+    // stamp box
+    const sx = W / 2 - 150, sy = 470, ss = 300;
+    x.strokeStyle = ink; x.lineWidth = 8; x.strokeRect(sx, sy, ss, ss);
+    x.fillStyle = accent; x.font = "900 150px 'Fraunces', serif";
+    x.fillText(result.pct + "%", W / 2, sy + 185);
+    x.fillStyle = olive; x.font = "500 28px 'DM Mono', monospace";
+    x.fillText("IN SYNC", W / 2, sy + 245);
+
+    x.fillStyle = accent; x.font = "900 70px 'Fraunces', serif";
+    x.fillText(result.verdict, W / 2, 880);
+
+    x.fillStyle = ink; x.font = "italic 500 40px 'Fraunces', serif";
+    x.fillText(names.p1 + "  ×  " + names.p2, W / 2, 955);
+
+    return c;
+  }
+
+  async function shareResult() {
+    const text = names.p1 + " & " + names.p2 + " scored " + result.pct + "% on Keeper or Ditcher — \u201C" + result.verdict + "\u201D";
+    const canvas = buildShareCard();
+
+    const blob = await new Promise(res => canvas.toBlob(res, "image/png"));
+    const file = new File([blob], "keeper-or-ditcher.png", { type: "image/png" });
+
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({ files: [file], text });
+        return;
+      } catch (e) { if (e && e.name === "AbortError") return; }
+    }
+    if (navigator.share) {
+      try { await navigator.share({ text }); return; } catch (e) { if (e && e.name === "AbortError") return; }
+    }
+    // Fallback: download the image + copy text
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "keeper-or-ditcher.png"; a.click();
+    URL.revokeObjectURL(url);
+    if (navigator.clipboard) navigator.clipboard.writeText(text).catch(() => {});
+  }
+
+  async function submitEmail(e) {
+    e.preventDefault();
+    const emailEl = document.getElementById("email");
+    const consentEl = document.getElementById("consent");
+    const msg = document.getElementById("captureMsg");
+    const btn = document.getElementById("emailBtn");
+    const email = emailEl.value.trim();
+
+    msg.className = "capture-msg";
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      msg.textContent = "Please enter a valid email."; msg.classList.add("err"); return false;
+    }
+    if (!consentEl.checked) {
+      msg.textContent = "Please tick the consent box to continue."; msg.classList.add("err"); return false;
+    }
+
+    btn.disabled = true;
+    msg.textContent = "Sending…";
+
+    // DEMO mode: no username configured yet — succeed locally without sending.
+    if (!BUTTONDOWN_USERNAME || BUTTONDOWN_USERNAME === "YOUR-BUTTONDOWN-USERNAME") {
+      setTimeout(() => showCaptureDone(), 500);
+      return false;
+    }
+
+    try {
+      // Buttondown's front-end embed endpoint. Expects form-encoded data and
+      // does NOT require (or expose) an API key. Triggers double opt-in.
+      const body = new URLSearchParams();
+      body.set("email", email);
+      // Optional metadata stored on the subscriber for context:
+      body.set("metadata__partner_1", names.p1);
+      body.set("metadata__partner_2", names.p2);
+      body.set("metadata__score", result.pct + "%");
+      body.set("metadata__verdict", result.verdict);
+
+      const res = await fetch(
+        "https://buttondown.com/api/emails/embed-subscribe/" + encodeURIComponent(BUTTONDOWN_USERNAME),
+        { method: "POST", body }
+      );
+
+      // The embed endpoint returns 200/302 on success. Opaque/redirect
+      // responses still indicate the subscribe was accepted.
+      if (res.ok || res.status === 0 || res.type === "opaqueredirect") {
+        showCaptureDone();
+      } else {
+        throw new Error("status " + res.status);
+      }
+    } catch (err) {
+      btn.disabled = false;
+      msg.className = "capture-msg err";
+      msg.textContent = "Something went wrong — try again.";
+    }
+    return false;
+  }
+
+  function showCaptureDone() {
+    const box = document.getElementById("capture");
+    box.classList.add("done");
+    box.innerHTML =
+      '<div class="big-emoji" aria-hidden="true">💌</div>' +
+      '<h3>Almost there \u2014 confirm it.</h3>' +
+      '<p class="note" style="margin-bottom:0;">We just sent a confirmation email. Tap the link in it to join the list and get your result.</p>';
+  }
+
+  function show(id) {
+    ["start","quiz","handoff","reveal","result"].forEach(s =>
+      document.getElementById(s).classList.toggle("active", s === id)
+    );
+    window.scrollTo(0, 0);
+  }
+</script>
+</body>
+</html>
